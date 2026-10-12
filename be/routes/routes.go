@@ -49,6 +49,8 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 
 			// Endpoint untuk mendapatkan profil pengguna yang login.
 			auth.GET("/me", authMiddleware.Authenticate(), authHandler.Me)
+			auth.PUT("/me", authMiddleware.Authenticate(), authHandler.UpdateProfile)
+			auth.PUT("/password", authMiddleware.Authenticate(), authHandler.ChangePassword)
 		}
 
 		// PUBLIC: Products

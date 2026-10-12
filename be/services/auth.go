@@ -347,3 +347,109 @@ func (s *AuthService) GetUserByID(id uint) (*models.User, error) {
 
 	return &user, nil
 }
+
+
+func (s *AuthService) UpdateProfile(
+	userID uint,
+	name, email string,
+) (*models.User, error) {
+	name = strings.TrimSpace(name)
+	email = strings.ToLower(strings.TrimSpace(email))
+
+	if name == "" || len(name) > 100 ||
+		email == "" || len(email) > 254 {
+		return nil, ErrInvalidInput
+	}
+
+	if _, err := mail.ParseAddress(email); err != nil {
+		return nil, ErrInvalidInput
+	}
+
+	var user models.User
+
+	err := s.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.First(&user, userID).Error; err != nil {
+			return err
+		}
+
+		var count int64
+		if err := tx.Model(&models.User{}).
+			Where("email = ? AND id <> ?", email, userID).
+			Count(&count).Error; err != nil {
+			return err
+		}
+
+		if count > 0 {
+			return ErrEmailExists
+		}
+
+		if err := tx.Model(&user).Updates(map[string]interface{}{
+			"name":  name,
+			"email": email,
+		}).Error; err != nil {
+			return err
+		}
+
+		user.Name = name
+		user.Email = email
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (s *AuthService) ChangePassword(
+	userID uint,
+	currentPassword, newPassword string,
+) error {
+	if len(newPassword) < 8 || len(newPassword) > 72 {
+		return ErrInvalidInput
+	}
+
+	if currentPassword == "" {
+		return ErrInvalidInput
+	}
+
+	return s.DB.Transaction(func(tx *gorm.DB) error {
+		var user models.User
+
+		if err := tx.First(&user, userID).Error; err != nil {
+			return err
+		}
+
+		if err := bcrypt.CompareHashAndPassword(
+			[]byte(user.Password),
+			[]byte(currentPassword),
+		); err != nil {
+			return ErrInvalidCredentials
+		}
+
+		hashedPassword, err := bcrypt.GenerateFromPassword(
+			[]byte(newPassword),
+			bcrypt.DefaultCost,
+		)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Model(&user).Update(
+			"password",
+			string(hashedPassword),
+		).Error; err != nil {
+			return err
+		}
+
+		// Cabut seluruh refresh token milik user.
+		now := time.Now()
+
+		return tx.Model(&models.RefreshToken{}).
+			Where("user_id = ?", userID).
+			Where("revoked_at IS NULL").
+			Update("revoked_at", &now).Error
+	})
+}
