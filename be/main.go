@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -20,7 +21,7 @@ func main() {
 
 	router := gin.Default()
 
-	routes.Setup(router, db)
+	routes.Setup(router, db, cfg)
 
 	log.Printf("Server running on :%s", cfg.AppPort)
 

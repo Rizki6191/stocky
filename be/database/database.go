@@ -62,6 +62,7 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 		&models.Payment{},
 		&models.Promo{},
 		&models.Banner{},
+		&models.RefreshToken{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("gagal auto migrate database: %w", err)

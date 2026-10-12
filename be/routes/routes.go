@@ -1,23 +1,35 @@
 package routes
 
 import (
+	"stocky/config"
 	"stocky/handlers"
+	"stocky/middleware"
 	"stocky/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func Setup(router *gin.Engine, db *gorm.DB) {
+func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// Services
 	productService := services.NewProductService(db)
 	categoryService := services.NewCategoryService(db)
 	bannerService := services.NewBannerService(db)
+	authService := services.NewAuthService(
+		db,
+		cfg.JWTSecret,
+		cfg.JWTAccessTTL,
+		cfg.JWTRefreshTTL,
+	)
 
 	// Handlers
 	productHandler := handlers.NewProductHandler(productService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	bannerHandler := handlers.NewBannerHandler(bannerService)
+	authHandler := handlers.NewAuthHandler(authService)
+
+	// Middleware
+	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{
@@ -27,6 +39,18 @@ func Setup(router *gin.Engine, db *gorm.DB) {
 
 	api := router.Group("/api")
 	{
+		// AUTH
+		auth := api.Group("/auth")
+		{
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/login", authHandler.Login)
+			auth.POST("/refresh", authHandler.Refresh)
+			auth.POST("/logout", authHandler.Logout)
+
+			// Endpoint untuk mendapatkan profil pengguna yang login.
+			auth.GET("/me", authMiddleware.Authenticate(), authHandler.Me)
+		}
+
 		// PUBLIC: Products
 		api.GET("/products", productHandler.GetAll)
 		api.GET("/products/:id", productHandler.GetByID)
@@ -35,12 +59,16 @@ func Setup(router *gin.Engine, db *gorm.DB) {
 		api.GET("/categories", categoryHandler.GetAll)
 		api.GET("/categories/:id", categoryHandler.GetByID)
 
-		// PUBLIC: Banners yang sedang berlaku
+		// PUBLIC: Banners
 		api.GET("/banners", bannerHandler.GetAllPublic)
 		api.GET("/banners/:id", bannerHandler.GetPublicByID)
 
-		// ADMIN
-		admin := api.Group("/admin")
+		// ADMIN: Semua route di grup ini wajib login sebagai admin.
+		admin := api.Group(
+			"/admin",
+			authMiddleware.Authenticate(),
+			authMiddleware.RequireRole("admin"),
+		)
 		{
 			// Products
 			admin.POST("/products", productHandler.Create)

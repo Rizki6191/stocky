@@ -163,3 +163,13 @@ type Banner struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type RefreshToken struct {
+	ID uint `json:"id" gorm:"primarykey"`
+	UserID uint `json:"user_id" gorm:"not null;index"`
+	TokenHash string `json:"-" gorm:"uniqueIndex;not null"`
+	ExpiresAt time.Time `json:"expired_at" gorm:"not null;index"`
+	RevokedAt *time.Time `json:"-"`
+
+	CreatedAt time.Time `json:"created_at"`
+}

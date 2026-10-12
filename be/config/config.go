@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -16,6 +17,9 @@ type Config struct {
 	DBName      string
 	DBSSLMode   string
 	DatabaseURL string
+	JWTSecret string
+	JWTAccessTTL time.Duration
+	JWTRefreshTTL time.Duration
 }
 
 func Load() *Config {
@@ -68,6 +72,9 @@ func Load() *Config {
 			"DATABASE_URL",
 			"",
 		),
+		JWTSecret: getEnv("JWT_SECRET", ""),
+		JWTAccessTTL: getDurationEnv("JWT_ACCESS_TTL", 15*time.Minute),
+		JWTRefreshTTL: getDurationEnv("JWT_REFRESH_TTL", 7*24*time.Hour),
 	}
 }
 
@@ -79,4 +86,18 @@ func getEnv(key, fallback string) string {
 	}
 
 	return value
+}
+
+func getDurationEnv(key string, fallback time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return  fallback
+	}
+
+	duration, err := time.ParseDuration(value)
+	if err != nil || duration <= 0{
+		return  fallback
+	}
+
+	return duration
 }
