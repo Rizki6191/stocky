@@ -21,16 +21,19 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		cfg.JWTAccessTTL,
 		cfg.JWTRefreshTTL,
 	)
+	cartService := services.NewCartService(db)
 
 	// Handlers
 	productHandler := handlers.NewProductHandler(productService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	bannerHandler := handlers.NewBannerHandler(bannerService)
 	authHandler := handlers.NewAuthHandler(authService)
+	cartHandler := handlers.NewCartHandler(cartService)
 
 	// Middleware
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
+	// Health check
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{
 			"message": "API is running",
@@ -47,10 +50,21 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			auth.POST("/refresh", authHandler.Refresh)
 			auth.POST("/logout", authHandler.Logout)
 
-			// Endpoint untuk mendapatkan profil pengguna yang login.
-			auth.GET("/me", authMiddleware.Authenticate(), authHandler.Me)
-			auth.PUT("/me", authMiddleware.Authenticate(), authHandler.UpdateProfile)
-			auth.PUT("/password", authMiddleware.Authenticate(), authHandler.ChangePassword)
+			auth.GET(
+				"/me",
+				authMiddleware.Authenticate(),
+				authHandler.Me,
+			)
+			auth.PUT(
+				"/me",
+				authMiddleware.Authenticate(),
+				authHandler.UpdateProfile,
+			)
+			auth.PUT(
+				"/password",
+				authMiddleware.Authenticate(),
+				authHandler.ChangePassword,
+			)
 		}
 
 		// PUBLIC: Products
@@ -65,7 +79,17 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		api.GET("/banners", bannerHandler.GetAllPublic)
 		api.GET("/banners/:id", bannerHandler.GetPublicByID)
 
-		// ADMIN: Semua route di grup ini wajib login sebagai admin.
+		// CART: Semua endpoint wajib login.
+		cart := api.Group("/cart", authMiddleware.Authenticate())
+		{
+			cart.GET("", cartHandler.Get)
+			cart.POST("/items", cartHandler.AddItem)
+			cart.PUT("/items/:id", cartHandler.UpdateItem)
+			cart.DELETE("/items/:id", cartHandler.RemoveItem)
+			cart.DELETE("", cartHandler.Clear)
+		}
+
+		// ADMIN: Login dan role admin wajib.
 		admin := api.Group(
 			"/admin",
 			authMiddleware.Authenticate(),

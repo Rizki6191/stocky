@@ -93,11 +93,11 @@ type Payment struct {
 	ID      uint `json:"id" gorm:"primaryKey"`
 	OrderID uint `json:"order_id" gorm:"uniqueIndex;not null"`
 
-	Provider   string `json:"provider" gorm:"not null"`
-	Reference  string `json:"reference" gorm:"index"`
-	Amount     int64  `json:"amount" gorm:"not null"`
-	Status     string `json:"status" gorm:"not null;default:pending"`
-	PaymentURL string `json:"payment_url"`
+	Provider   string     `json:"provider" gorm:"not null"`
+	Reference  string     `json:"reference" gorm:"index"`
+	Amount     int64      `json:"amount" gorm:"not null"`
+	Status     string     `json:"status" gorm:"not null;default:pending"`
+	PaymentURL string     `json:"payment_url"`
 	PaidAt     *time.Time `json:"paid_at"`
 
 	CreatedAt time.Time `json:"created_at"`
@@ -159,4 +159,23 @@ type RefreshToken struct {
 	RevokedAt *time.Time `json:"-"`
 
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type Cart struct {
+	ID        uint       `json:"id" gorm:"primaryKey"`
+	UserID    uint       `json:"-" gorm:"not null;uniqueIndex"`
+	Items     []CartItem `json:"items,omitempty" gorm:"foreignKey:CartID;constraint:OnDelete:CASCADE"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+}
+
+type CartItem struct {
+	ID        uint    `json:"id" gorm:"primarykey"`
+	CartID    uint    `json:"-" gorm:"not null;uniqueIndex;idx_cart_product"`
+	ProductID uint    `json:"product_id" gorm:"not null;uniqueIndex;idx_cart_product"`
+	Product   Product `json:"product" gorm:"foreignKey:ProductID"`
+	Quantity  int     `json:"quantity" gorm:"not null;check:chk_cart_items_quantity,quantity > 0"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
