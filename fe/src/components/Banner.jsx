@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
+import { api } from '../services/api'
 
 const defaultBanners = [
   {
@@ -41,12 +42,46 @@ const defaultBanners = [
   },
 ]
 
+
 function Banner({
-  banners = defaultBanners,
+  banners: propBanners,
   autoPlay = true,
 }) {
+  const [apiBanners, setApiBanners] = useState(null)
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  useEffect(() => {
+    if (propBanners) return
+
+    let isMounted = true
+    async function loadBanners() {
+      try {
+        const res = await api.getBanners()
+        if (res?.data && res.data.length > 0 && isMounted) {
+          const mapped = res.data.map((b) => ({
+            id: b.id,
+            eyebrow: 'Featured collection',
+            title: b.title,
+            description: b.description,
+            image: b.image_url,
+            buttonText: b.button_text || 'Shop now',
+            link: b.link_url || '/products',
+          }))
+          setApiBanners(mapped)
+        }
+      } catch {
+        // use default
+      }
+    }
+
+    loadBanners()
+
+    return () => {
+      isMounted = false
+    }
+  }, [propBanners])
+
+  const banners = propBanners || apiBanners || defaultBanners
   const totalBanners = banners.length
 
   useEffect(() => {

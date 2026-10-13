@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowUpRight, Package } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -6,13 +6,46 @@ import {
   dummyCategories,
   dummyProducts,
 } from '../data/dummyProducts'
+import { api } from '../services/api'
 
 function Category() {
   const [search, setSearch] = useState('')
+  const [rawCategories, setRawCategories] = useState(dummyCategories)
+  const [rawProducts, setRawProducts] = useState(dummyProducts)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadData() {
+      try {
+        const [catRes, prodRes] = await Promise.allSettled([
+          api.getCategories(),
+          api.getProducts(),
+        ])
+
+        if (isMounted) {
+          if (catRes.status === 'fulfilled' && catRes.value?.data?.length > 0) {
+            setRawCategories(catRes.value.data)
+          }
+          if (prodRes.status === 'fulfilled' && prodRes.value?.data?.length > 0) {
+            setRawProducts(prodRes.value.data)
+          }
+        }
+      } catch {
+        // use fallback
+      }
+    }
+
+    loadData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const categories = useMemo(() => {
-    return dummyCategories.map((category) => {
-      const products = dummyProducts.filter(
+    return rawCategories.map((category) => {
+      const products = rawProducts.filter(
         (product) => product.category_id === category.id
       )
 
@@ -22,7 +55,7 @@ function Category() {
         products,
       }
     })
-  }, [])
+  }, [rawCategories, rawProducts])
 
   const filteredCategories = useMemo(() => {
     const query = search.trim().toLowerCase()

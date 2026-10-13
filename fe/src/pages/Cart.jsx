@@ -1,10 +1,8 @@
-import { useMemo, useState } from 'react'
 import { ArrowLeft, ShoppingCart } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import CartItem from '../components/CartItem'
-
-import { dummyProducts } from '../data/dummyProducts'
+import { useCart } from '../context/CartContext'
 
 function formatPrice(price) {
   return new Intl.NumberFormat('id-ID', {
@@ -14,75 +12,25 @@ function formatPrice(price) {
   }).format(price)
 }
 
-const initialCart = [
-  {
-    id: 1,
-    product_id: 1,
-    quantity: 1,
-  },
-  {
-    id: 2,
-    product_id: 3,
-    quantity: 2,
-  },
-]
-
 function Cart() {
-  const [cartItems, setCartItems] = useState(initialCart)
-
-  const items = useMemo(() => {
-    return cartItems
-      .map((item) => ({
-        ...item,
-        product: dummyProducts.find(
-          (product) => product.id === item.product_id
-        ),
-      }))
-      .filter((item) => item.product)
-  }, [cartItems])
-
-  const totalItems = useMemo(() => {
-    return items.reduce(
-      (total, item) => total + item.quantity,
-      0
-    )
-  }, [items])
-
-  const subtotal = useMemo(() => {
-    return items.reduce(
-      (total, item) =>
-        total +
-        item.product.price * item.quantity,
-      0
-    )
-  }, [items])
+  const navigate = useNavigate()
+  const {
+    items,
+    totalItems,
+    subtotal,
+    updateQuantity,
+    removeFromCart,
+  } = useCart()
 
   const handleQuantityChange = (
     productId,
     quantity
   ) => {
-    if (quantity < 1) {
-      return
-    }
-
-    setCartItems((current) =>
-      current.map((item) =>
-        item.product_id === productId
-          ? {
-              ...item,
-              quantity,
-            }
-          : item
-      )
-    )
+    updateQuantity(productId, quantity)
   }
 
   const handleRemove = (productId) => {
-    setCartItems((current) =>
-      current.filter(
-        (item) => item.product_id !== productId
-      )
-    )
+    removeFromCart(productId)
   }
 
   return (
@@ -423,7 +371,7 @@ function Cart() {
                 hover:opacity-80
               "
               onClick={() => {
-                console.log('Checkout:', items)
+                navigate('/checkout')
               }}
             >
               Checkout

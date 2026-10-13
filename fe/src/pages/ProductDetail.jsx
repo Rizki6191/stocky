@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 
 import { dummyProducts } from '../data/dummyProducts'
+import { useCart } from '../context/CartContext'
+import { api } from '../services/api'
 
 function formatPrice(price) {
   return new Intl.NumberFormat('id-ID', {
@@ -19,13 +21,42 @@ function formatPrice(price) {
 
 function ProductDetail() {
   const { id } = useParams()
+  const { addToCart } = useCart()
 
   const [quantity, setQuantity] = useState(1)
+  const [product, setProduct] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const product = useMemo(() => {
-    return dummyProducts.find(
-      (item) => String(item.id) === String(id)
-    )
+  useEffect(() => {
+    let isMounted = true
+
+    async function fetchProduct() {
+      setLoading(true)
+      try {
+        const res = await api.getProduct(id)
+        if (res?.data && isMounted) {
+          setProduct(res.data)
+          setLoading(false)
+          return
+        }
+      } catch {
+        // fallback
+      }
+
+      if (isMounted) {
+        const found = dummyProducts.find(
+          (item) => String(item.id) === String(id)
+        )
+        setProduct(found || null)
+        setLoading(false)
+      }
+    }
+
+    fetchProduct()
+
+    return () => {
+      isMounted = false
+    }
   }, [id])
 
   if (!product) {
@@ -89,10 +120,7 @@ function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    console.log('Add to cart:', {
-      product,
-      quantity,
-    })
+    addToCart(product, quantity)
   }
 
   return (

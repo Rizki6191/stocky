@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
     ChevronDown,
     Search,
@@ -6,6 +6,7 @@ import {
 
 import { dummyOrders } from '../data/dummyProducts'
 import { Link } from 'react-router-dom'
+import { api } from '../services/api'
 
 function formatPrice(price) {
     return new Intl.NumberFormat('id-ID', {
@@ -38,15 +39,68 @@ function getStatusLabel(status) {
 function Orders() {
     const [search, setSearch] = useState('')
     const [status, setStatus] = useState('all')
+    const [orders, setOrders] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        let isMounted = true
+
+        async function fetchOrders() {
+            setLoading(true)
+            const token = localStorage.getItem('token')
+            if (token) {
+                try {
+                    const res = await api.getMyOrders()
+                    if (res?.data && isMounted) {
+                        const mapped = res.data.map((o) => ({
+                            id: o.id,
+                            order_number: o.order_number,
+                            status: o.status,
+                            total: o.total_amount,
+                            created_at: o.created_at,
+                            customer: {
+                                id: o.user_id,
+                                name: 'My Account',
+                            },
+                            items: (o.items || []).map((it) => ({
+                                id: it.id,
+                                product_id: it.product_id,
+                                product_name: it.product_name,
+                                quantity: it.quantity,
+                                price: it.price,
+                            })),
+                        }))
+                        setOrders(mapped)
+                        setLoading(false)
+                        return
+                    }
+                } catch {
+                    // Fallback to dummy
+                }
+            }
+
+            if (isMounted) {
+                setOrders(dummyOrders)
+                setLoading(false)
+            }
+        }
+
+        fetchOrders()
+
+        return () => {
+            isMounted = false
+        }
+    }, [])
 
     const filteredOrders = useMemo(() => {
         const query = search.trim().toLowerCase()
 
-        return dummyOrders.filter((order) => {
+        return orders.filter((order) => {
+            const customerName = order.customer?.name || ''
             const matchesSearch =
                 !query ||
                 order.order_number.toLowerCase().includes(query) ||
-                order.customer.name.toLowerCase().includes(query)
+                customerName.toLowerCase().includes(query)
 
             const matchesStatus =
                 status === 'all' ||
@@ -54,7 +108,7 @@ function Orders() {
 
             return matchesSearch && matchesStatus
         })
-    }, [search, status])
+    }, [orders, search, status])
 
     return (
         <div className="space-y-8">

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react'
 
 import { dummyOrders } from '../data/dummyProducts'
+import { api } from '../services/api'
 
 function formatPrice(price) {
   return new Intl.NumberFormat('id-ID', {
@@ -54,10 +56,59 @@ function getStatusIcon(status) {
 
 function OrderDetail() {
   const { id } = useParams()
+  const [order, setOrder] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const order = dummyOrders.find(
-    (item) => item.id === Number(id)
-  )
+  useEffect(() => {
+    let isMounted = true
+
+    async function fetchOrder() {
+      setLoading(true)
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          const res = await api.getMyOrder(id)
+          if (res?.data && isMounted) {
+            const o = res.data
+            setOrder({
+              id: o.id,
+              order_number: o.order_number,
+              status: o.status,
+              total: o.total_amount,
+              created_at: o.created_at,
+              customer: {
+                id: o.user_id,
+                name: 'My Account',
+              },
+              items: (o.items || []).map((it) => ({
+                id: it.id,
+                product_id: it.product_id,
+                product_name: it.product_name,
+                quantity: it.quantity,
+                price: it.price,
+              })),
+            })
+            setLoading(false)
+            return
+          }
+        } catch {
+          // Fallback to dummy
+        }
+      }
+
+      if (isMounted) {
+        const found = dummyOrders.find((item) => String(item.id) === String(id))
+        setOrder(found || null)
+        setLoading(false)
+      }
+    }
+
+    fetchOrder()
+
+    return () => {
+      isMounted = false
+    }
+  }, [id])
 
   if (!order) {
     return (
@@ -111,8 +162,6 @@ function OrderDetail() {
       </div>
     )
   }
-
-  const StatusIcon = getStatusIcon(order.status)
 
   const totalItems = order.items.reduce(
     (total, item) => total + item.quantity,
@@ -205,11 +254,10 @@ function OrderDetail() {
             py-2
           "
         >
-          <StatusIcon
-            size={15}
-            strokeWidth={1.7}
-            className="text-[var(--color-text-muted)]"
-          />
+          {(() => {
+            const Icon = getStatusIcon(order.status)
+            return <Icon size={15} strokeWidth={1.7} className="text-[var(--color-text-muted)]" />
+          })()}
 
           <span
             className="

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import ProductGrid from '../components/ProductGrid'
@@ -10,11 +10,44 @@ import {
 } from '../data/dummyProducts'
 
 import { useCart } from '../context/CartContext'
+import { api } from '../services/api'
 
 function Product() {
   const [searchParams, setSearchParams] = useSearchParams()
-
   const { addToCart } = useCart()
+
+  const [categories, setCategories] = useState(dummyCategories)
+  const [products, setProducts] = useState(dummyProducts)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadData() {
+      try {
+        const [prodRes, catRes] = await Promise.allSettled([
+          api.getProducts(),
+          api.getCategories(),
+        ])
+
+        if (isMounted) {
+          if (prodRes.status === 'fulfilled' && prodRes.value?.data?.length > 0) {
+            setProducts(prodRes.value.data)
+          }
+          if (catRes.status === 'fulfilled' && catRes.value?.data?.length > 0) {
+            setCategories(catRes.value.data)
+          }
+        }
+      } catch {
+        // use fallback
+      }
+    }
+
+    loadData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const categoryParam = searchParams.get('category')
 
@@ -25,14 +58,14 @@ function Product() {
 
   const filteredProducts = useMemo(() => {
     if (selectedCategory === null) {
-      return dummyProducts
+      return products
     }
 
-    return dummyProducts.filter(
+    return products.filter(
       (product) =>
         product.category_id === selectedCategory
     )
-  }, [selectedCategory])
+  }, [products, selectedCategory])
 
   const handleCategoryChange = (categoryId) => {
     if (categoryId === null) {
@@ -88,7 +121,7 @@ function Product() {
 
       {/* Categories */}
       <CategorySection
-        categories={dummyCategories}
+        categories={categories}
         selectedCategory={selectedCategory}
         onCategoryChange={handleCategoryChange}
       />

@@ -9,6 +9,8 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { useCart } from '../context/CartContext'
 
+import { api } from '../services/api'
+
 function formatPrice(price) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -24,6 +26,7 @@ function Checkout() {
     items,
     totalItems,
     subtotal,
+    clearCart,
   } = useCart()
 
   const [form, setForm] = useState({
@@ -37,6 +40,7 @@ function Checkout() {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const shipping = 15000
   const total = subtotal + shipping
@@ -50,19 +54,35 @@ function Checkout() {
     }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-
     setIsSubmitting(true)
+    setErrorMessage('')
 
-    // Dummy checkout.
-    // Later this becomes:
-    // POST /api/orders
+    const token = localStorage.getItem('token')
+    if (token) {
+      try {
+        const res = await api.checkout()
+        clearCart()
+        const orderId = res?.data?.id
+        if (orderId) {
+          navigate(`/orders/${orderId}`)
+        } else {
+          navigate('/orders')
+        }
+        return
+      } catch (err) {
+        console.error('Checkout error:', err)
+        setErrorMessage(err.message || 'Gagal melakukan checkout')
+        setIsSubmitting(false)
+        return
+      }
+    }
 
+    // Local / Guest fallback
     setTimeout(() => {
+      clearCart()
       setIsSubmitting(false)
-
-      // For now, return to orders.
       navigate('/orders')
     }, 700)
   }
@@ -203,6 +223,24 @@ function Checkout() {
         >
           Complete your information to place the order.
         </p>
+
+        {errorMessage && (
+          <div
+            className="
+              mt-4
+              rounded-[4px]
+              border
+              border-red-500/20
+              bg-red-500/10
+              px-4
+              py-2.5
+              text-xs
+              text-red-500
+            "
+          >
+            {errorMessage}
+          </div>
+        )}
       </div>
 
       <div
