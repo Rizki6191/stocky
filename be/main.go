@@ -3,6 +3,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"stocky/config"
 	"stocky/database"
@@ -17,6 +18,13 @@ func main() {
 	db, err := database.Connect(cfg)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "seed" {
+		if err := database.Seed(); err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 
 	router := gin.Default()
