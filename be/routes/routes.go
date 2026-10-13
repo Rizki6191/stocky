@@ -22,6 +22,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		cfg.JWTRefreshTTL,
 	)
 	cartService := services.NewCartService(db)
+	orderService := services.NewOrderService(db)
 
 	// Handlers
 	productHandler := handlers.NewProductHandler(productService)
@@ -29,6 +30,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	bannerHandler := handlers.NewBannerHandler(bannerService)
 	authHandler := handlers.NewAuthHandler(authService)
 	cartHandler := handlers.NewCartHandler(cartService)
+	orderHandler := handlers.NewOrderHandler(orderService)
 
 	// Middleware
 	authMiddleware := middleware.NewAuthMiddleware(authService)
@@ -87,6 +89,14 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			cart.PUT("/items/:id", cartHandler.UpdateItem)
 			cart.DELETE("/items/:id", cartHandler.RemoveItem)
 			cart.DELETE("", cartHandler.Clear)
+		}
+
+		// ORDERS: Semua endpoint wajib login.
+		orders := api.Group("/orders", authMiddleware.Authenticate())
+		{
+			orders.POST("/checkout", orderHandler.Checkout)
+			orders.GET("", orderHandler.GetMyOrders)
+			orders.GET("/:id", orderHandler.GetMyOrder)
 		}
 
 		// ADMIN: Login dan role admin wajib.
