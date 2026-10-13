@@ -87,4 +87,18 @@ export const api = {
   checkout: () => request('/api/orders/checkout', { method: 'POST' }),
   getMyOrders: () => request('/api/orders'),
   getMyOrder: (id) => request(`/api/orders/${id}`),
+
+  // Admin
+  adminCreateProduct: (body) => request('/api/admin/products', { method: 'POST', body: JSON.stringify(body) }),
+  adminUpdateProduct: (id, body) => request(`/api/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  adminDeleteProduct: (id) => request(`/api/admin/products/${id}`, { method: 'DELETE' }),
+
+  adminCreateCategory: (body) => request('/api/admin/categories', { method: 'POST', body: JSON.stringify(body) }),
+  adminUpdateCategory: (id, body) => request(`/api/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  adminDeleteCategory: (id) => request(`/api/admin/categories/${id}`, { method: 'DELETE' }),
+
+  adminGetBanners: () => request('/api/admin/banners'),
+  adminCreateBanner: (body) => request('/api/admin/banners', { method: 'POST', body: JSON.stringify(body) }),
+  adminUpdateBanner: (id, body) => request(`/api/admin/banners/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  adminDeleteBanner: (id) => request(`/api/admin/banners/${id}`, { method: 'DELETE' }),
 }

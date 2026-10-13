@@ -8,7 +8,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useCart } from '../context/CartContext'
-
+import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 
 function formatPrice(price) {
@@ -21,6 +21,7 @@ function formatPrice(price) {
 
 function Checkout() {
   const navigate = useNavigate()
+  const { isAuthenticated, user, loading: authLoading } = useAuth()
 
   const {
     items,
@@ -30,14 +31,19 @@ function Checkout() {
   } = useCart()
 
   const [form, setForm] = useState({
-    name: '',
-    email: '',
+    name: user?.name || '',
+    email: user?.email || '',
     phone: '',
     address: '',
     city: '',
     postalCode: '',
     paymentMethod: 'bank_transfer',
   })
+
+  // Auto-redirect if not logged in
+  if (!authLoading && !isAuthenticated) {
+    navigate('/auth?redirect=/checkout', { replace: true })
+  }
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')

@@ -16,8 +16,13 @@ import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
+import Auth from './pages/Auth'
+import Profile from './pages/Profile'
+import Info from './pages/Info'
+import Settings from './pages/Settings'
 
 import { CartProvider } from './context/CartContext'
+import { AuthProvider } from './context/AuthContext'
 
 function PlaceholderPage({ title }) {
   return (
@@ -31,111 +36,107 @@ function PlaceholderPage({ title }) {
 
 function App() {
   return (
-    <CartProvider>
-      <BrowserRouter>
-        <Sidebar />
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <Sidebar />
 
-        <div className="min-h-screen pl-16 bg-[var(--color-bg)]">
+          <div className="min-h-screen pl-16 bg-[var(--color-bg)]">
 
-          <Header
-            storeName="Stocky"
-            currentPage="Dashboard"
-          />
+            <Header
+              storeName="Stocky"
+              currentPage="Dashboard"
+            />
 
-          <main className="p-6 lg:p-8">
-            <Routes>
+            <main className="p-6 lg:p-8">
+              <Routes>
 
-              {/* Root */}
-              <Route
-                path="/"
-                element={
-                  <Navigate
-                    to="/dashboard"
-                    replace
-                  />
-                }
-              />
+                {/* Root */}
+                <Route
+                  path="/"
+                  element={
+                    <Navigate
+                      to="/dashboard"
+                      replace
+                    />
+                  }
+                />
 
-              {/* Dashboard */}
-              <Route
-                path="/dashboard"
-                element={<Dashboard />}
-              />
+                {/* Dashboard */}
+                <Route
+                  path="/dashboard"
+                  element={<Dashboard />}
+                />
 
-              {/* Products */}
-              <Route
-                path="/products"
-                element={<Product />}
-              />
+                {/* Products */}
+                <Route
+                  path="/products"
+                  element={<Product />}
+                />
 
-              <Route
-                path="/products/:id"
-                element={<ProductDetail />}
-              />
+                <Route
+                  path="/products/:id"
+                  element={<ProductDetail />}
+                />
 
-              {/* Cart */}
-              <Route
-                path="/cart"
-                element={<Cart />}
-              />
+                {/* Auth */}
+                <Route
+                  path="/auth"
+                  element={<Auth />}
+                />
 
-              {/* Checkout */}
-              <Route
-                path="/checkout"
-                element={<Checkout />}
-              />
+                {/* Cart */}
+                <Route
+                  path="/cart"
+                  element={<Cart />}
+                />
 
-              {/* Categories */}
-              <Route
-                path="/categories"
-                element={<Category />}
-              />
+                {/* Checkout */}
+                <Route
+                  path="/checkout"
+                  element={<Checkout />}
+                />
 
-              {/* Orders */}
-              <Route
-                path="/orders"
-                element={<Orders />}
-              />
+                {/* Categories */}
+                <Route
+                  path="/categories"
+                  element={<Category />}
+                />
 
-              <Route
-                path="/orders/:id"
-                element={<OrderDetail />}
-              />
+                {/* Orders */}
+                <Route
+                  path="/orders"
+                  element={<Orders />}
+                />
 
-              {/* Other */}
-              <Route
-                path="/info"
-                element={
-                  <PlaceholderPage
-                    title="Info"
-                  />
-                }
-              />
+                <Route
+                  path="/orders/:id"
+                  element={<OrderDetail />}
+                />
 
-              <Route
-                path="/settings"
-                element={
-                  <PlaceholderPage
-                    title="Settings"
-                  />
-                }
-              />
+                {/* Other */}
+                <Route
+                  path="/info"
+                  element={<Info />}
+                />
 
-              <Route
-                path="/profile"
-                element={
-                  <PlaceholderPage
-                    title="Profile"
-                  />
-                }
-              />
+                <Route
+                  path="/settings"
+                  element={<Settings />}
+                />
 
-            </Routes>
-          </main>
+                <Route
+                  path="/profile"
+                  element={<Profile />}
+                />
 
-        </div>
-      </BrowserRouter>
-    </CartProvider>
+              </Routes>
+            </main>
+
+          </div>
+        </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
   )
 }
 

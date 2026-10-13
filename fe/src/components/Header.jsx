@@ -6,12 +6,14 @@ import {
 import { Link } from 'react-router-dom'
 
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 
 function Header({
     storeName = 'Stocky',
     currentPage = 'Dashboard',
 }) {
     const { totalItems } = useCart()
+    const { user, isAuthenticated } = useAuth()
 
     return (
         <header
@@ -159,6 +161,52 @@ function Header({
                             </span>
                         )}
                     </Link>
+
+                    {/* Auth User / Sign In */}
+                    {isAuthenticated ? (
+                        <Link
+                            to="/profile"
+                            className="
+                              ml-1
+                              flex h-9 items-center gap-2
+                              rounded-[3px]
+                              px-2.5
+                              text-xs
+                              font-medium
+                              text-[var(--color-text)]
+                              transition-colors
+                              hover:bg-[var(--color-bg)]
+                            "
+                            title={user?.email}
+                        >
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-text)] text-[10px] font-medium text-[var(--color-surface)]">
+                                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                            </span>
+                            <span className="max-w-[100px] truncate hidden sm:inline">
+                                {user?.name || 'Account'}
+                            </span>
+                        </Link>
+                    ) : (
+                        <Link
+                            to="/auth"
+                            className="
+                              ml-1
+                              inline-flex
+                              h-8
+                              items-center
+                              rounded-[3px]
+                              bg-[var(--color-text)]
+                              px-3
+                              text-xs
+                              font-medium
+                              text-[var(--color-surface)]
+                              transition-opacity
+                              hover:opacity-85
+                            "
+                        >
+                            Sign in
+                        </Link>
+                    )}
 
                 </div>
 

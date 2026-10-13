@@ -9,7 +9,11 @@ import {
   Info,
   Settings,
   UserCircle,
+  ShieldCheck,
+  User,
 } from 'lucide-react'
+
+import { useAuth } from '../context/AuthContext'
 
 const mainItems = [
   {
@@ -54,8 +58,10 @@ const bottomItems = [
 
 function Sidebar() {
   const [expanded, setExpanded] = useState(false)
+  const { user, isAuthenticated } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
-  const renderItem = ({ label, path, icon: Icon }) => (
+  const renderItem = ({ label, path, icon: Icon, badge }) => (
     <NavLink
       key={path}
       to={path}
@@ -75,6 +81,7 @@ function Sidebar() {
 
       <span
         className={`
+          flex flex-1 items-center justify-between pr-3
           whitespace-nowrap text-[13px] font-medium
           transition-all duration-150
           ${
@@ -84,7 +91,12 @@ function Sidebar() {
           }
         `}
       >
-        {label}
+        <span>{label}</span>
+        {badge && (
+          <span className="rounded-[3px] border border-[var(--color-border)] px-1.5 py-0.2 text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">
+            {badge}
+          </span>
+        )}
       </span>
 
       {/* Tooltip ketika collapsed */}
@@ -92,6 +104,7 @@ function Sidebar() {
         <span
           className="
             pointer-events-none absolute left-[58px] z-50
+            flex items-center gap-1.5
             whitespace-nowrap rounded-[3px]
             border border-[var(--color-border)]
             bg-[var(--color-surface)]
@@ -103,7 +116,10 @@ function Sidebar() {
             group-hover:opacity-100
           "
         >
-          {label}
+          <span>{label}</span>
+          {badge && (
+            <span className="text-[10px] text-[var(--color-text-muted)]">({badge})</span>
+          )}
         </span>
       )}
     </NavLink>
@@ -158,16 +174,71 @@ function Sidebar() {
         </div>
 
         {/* Main Navigation */}
-        <nav className="flex-1 px-2 py-3">
+        <nav className="flex-1 px-2 py-3 overflow-y-auto">
+          {expanded && (
+            <div className="px-3 pb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+              Store
+            </div>
+          )}
           <div className="space-y-1">
             {mainItems.map(renderItem)}
           </div>
         </nav>
 
-        {/* Bottom Navigation */}
+        {/* User Role Badge in Sidebar */}
+        <div className="border-t border-[var(--color-border)] px-2 py-2">
+          <div
+            className={`
+              flex h-10 items-center rounded-[3px] bg-[var(--color-bg)]
+              transition-colors duration-150
+            `}
+            title={isAuthenticated ? `Logged in as ${user?.name} (${isAdmin ? 'Admin' : 'User'})` : 'Guest Visitor'}
+          >
+            <span className="flex h-10 w-12 shrink-0 items-center justify-center text-[var(--color-text)]">
+              {isAdmin ? (
+                <ShieldCheck size={18} strokeWidth={1.8} className="text-purple-600 dark:text-purple-400" />
+              ) : isAuthenticated ? (
+                <User size={18} strokeWidth={1.8} className="text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <UserCircle size={18} strokeWidth={1.7} className="text-[var(--color-text-muted)]" />
+              )}
+            </span>
+
+            <div
+              className={`
+                min-w-0 flex-1 pr-2
+                transition-all duration-150
+                ${
+                  expanded
+                    ? 'translate-x-0 opacity-100'
+                    : 'pointer-events-none -translate-x-2 opacity-0'
+                }
+              `}
+            >
+              <p className="truncate text-xs font-medium text-[var(--color-text)]">
+                {isAuthenticated ? user?.name : 'Guest'}
+              </p>
+              <p className="truncate text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
+                {isAdmin ? 'Admin' : isAuthenticated ? 'Customer' : 'Visitor'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Navigation: Info, Settings, Profile */}
         <nav className="border-t border-[var(--color-border)] px-2 py-3">
+          {expanded && (
+            <div className="px-3 pb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+              General
+            </div>
+          )}
           <div className="space-y-1">
-            {bottomItems.map(renderItem)}
+            {bottomItems.map((item) =>
+              renderItem({
+                ...item,
+                badge: item.label === 'Profile' && isAuthenticated ? (isAdmin ? 'Admin' : 'User') : null,
+              })
+            )}
           </div>
         </nav>
 

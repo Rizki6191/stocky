@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import CartItem from '../components/CartItem'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 
 function formatPrice(price) {
   return new Intl.NumberFormat('id-ID', {
@@ -14,6 +15,7 @@ function formatPrice(price) {
 
 function Cart() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const {
     items,
     totalItems,
@@ -371,7 +373,11 @@ function Cart() {
                 hover:opacity-80
               "
               onClick={() => {
-                navigate('/checkout')
+                if (!isAuthenticated) {
+                  navigate('/auth?redirect=/checkout')
+                } else {
+                  navigate('/checkout')
+                }
               }}
             >
               Checkout
